@@ -1,20 +1,20 @@
-import { pgTable, text, serial, integer, timestamp, json } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const queryCache = pgTable("query_cache", {
-  id: serial("id").primaryKey(),
+export const queryCache = sqliteTable("query_cache", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   query: text("query").notNull(),
   source: text("source").notNull(),
-  payload: json("payload").notNull(),
-  fetchedAt: timestamp("fetched_at").defaultNow(),
-  expiresAt: timestamp("expires_at"),
+  payload: text("payload", { mode: "json" }).notNull(),
+  fetchedAt: integer("fetched_at", { mode: "timestamp" }).default(new Date()),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
 });
 
-export const runLog = pgTable("run_log", {
-  id: serial("id").primaryKey(),
+export const runLog = sqliteTable("run_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   query: text("query").notNull(),
-  runTime: timestamp("run_time").defaultNow(),
+  runTime: integer("run_time", { mode: "timestamp" }).default(new Date()),
   arxivCount: integer("arxiv_count"),
   githubCount: integer("github_count"),
   durationMs: integer("duration_ms"),
@@ -34,8 +34,17 @@ export type ArxivItem = {
   id: string;
   title: string;
   summary: string;
+  aiSummary: string; // New AI summary field
   published: string;
   link: string;
+  impactScore?: number;
+  authors?: string[];
+};
+
+export type StartupOpportunity = {
+  idea: string;
+  problem: string;
+  solution: string;
 };
 
 export type GithubRepo = {
@@ -43,4 +52,6 @@ export type GithubRepo = {
   html_url: string;
   stars: number;
   description: string | null;
+  created_at?: string;
+  owner?: { login: string; type: string };
 };

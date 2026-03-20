@@ -1,78 +1,138 @@
-import { useState, useEffect } from "react";
-import { Loader2, Database, Cpu, Globe, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const LOADING_STEPS = [
-  { icon: Search, text: "Initializing analysis parameters..." },
-  { icon: Globe, text: "Connecting to arXiv Open Access API..." },
-  { icon: Database, text: "Fetching trending GitHub repositories..." },
-  { icon: Cpu, text: "Extracting semantic keywords and trends..." },
-  { icon: Loader2, text: "Compiling final insights..." }
+// ─── Scanning Steps ─────────────────────────────────────────────────────────
+// Each step represents a phase of the AI analysis pipeline shown to the user.
+const SCAN_STEPS = [
+  { icon: "🔭", label: "Querying arXiv API", detail: "Fetching latest research papers…" },
+  { icon: "🐙", label: "Scanning GitHub", detail: "Finding trending repositories…" },
+  { icon: "🧠", label: "AI Analysis Running", detail: "Generating summaries and insights…" },
+  { icon: "📊", label: "Computing Trend Signals", detail: "Calculating investment and momentum scores…" },
+  { icon: "🗺️", label: "Building Global Map", detail: "Mapping research activity by region…" },
+  { icon: "⚡", label: "Finalizing Intelligence", detail: "Compiling strategic recommendations…" },
 ];
 
-export function LoadingState({ query }: { query: string }) {
+interface LoadingStateProps {
+  query: string;
+}
+
+export function LoadingState({ query }: LoadingStateProps) {
   const [stepIndex, setStepIndex] = useState(0);
-  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [dots, setDots] = useState("");
 
+  // Cycle through steps on a timer
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeElapsed(prev => prev + 0.1);
-    }, 100);
-
-    const stepTimer = setInterval(() => {
-      setStepIndex(prev => Math.min(prev + 1, LOADING_STEPS.length - 1));
-    }, 1200);
-
-    return () => {
-      clearInterval(timer);
-      clearInterval(stepTimer);
-    };
+    const interval = setInterval(() => {
+      setStepIndex(prev => (prev + 1) % SCAN_STEPS.length);
+    }, 1800);
+    return () => clearInterval(interval);
   }, []);
 
-  const CurrentIcon = LOADING_STEPS[stepIndex].icon;
+  // Animated dots
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 px-4 w-full">
-      <div className="relative">
-        {/* Outer glowing rings */}
-        <div className="absolute inset-0 rounded-full animate-ping opacity-20 bg-primary w-24 h-24 -m-4" />
-        <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-[spin_3s_linear_infinite] w-24 h-24 -m-4" />
-        <div className="absolute inset-0 rounded-full border-2 border-dashed border-accent/50 animate-[spin_4s_linear_infinite_reverse] w-24 h-24 -m-4" />
-        
-        {/* Central icon */}
-        <div className="relative z-10 w-16 h-16 rounded-2xl bg-card border border-white/10 flex items-center justify-center shadow-xl shadow-primary/20 backdrop-blur-sm">
-          <CurrentIcon className={`w-8 h-8 text-primary ${stepIndex === LOADING_STEPS.length - 1 ? 'animate-spin' : ''}`} />
-        </div>
+    <div className="flex flex-col items-center justify-center gap-8 py-20">
+      {/* ─── Animated Radar Ring ──────────────────────────────────────────── */}
+      <div className="relative w-32 h-32 flex items-center justify-center">
+        {/* Outer pulse rings */}
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full border border-primary/30"
+            style={{ width: `${100 + i * 30}%`, height: `${100 + i * 30}%` }}
+            animate={{ opacity: [0.5, 0, 0.5], scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: i * 0.6, ease: "easeInOut" }}
+          />
+        ))}
+        {/* Spinning radar sweep */}
+        <motion.div
+          className="absolute inset-0 rounded-full border-2 border-t-primary border-r-primary/30 border-b-transparent border-l-transparent"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        />
+        {/* Center icon */}
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={stepIndex}
+            className="text-3xl z-10"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 1.5, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {SCAN_STEPS[stepIndex].icon}
+          </motion.span>
+        </AnimatePresence>
       </div>
 
-      <h3 className="mt-8 text-xl font-display font-semibold text-white">
-        Analyzing <span className="text-primary text-glow">"{query}"</span>
-      </h3>
-      
-      <div className="mt-4 h-6 relative overflow-hidden w-full max-w-md flex justify-center items-center text-sm text-muted-foreground font-mono">
+      {/* ─── Query & Status ───────────────────────────────────────────────── */}
+      <div className="text-center space-y-2">
+        <p className="text-xs font-mono uppercase tracking-[0.3em] text-primary/60">
+          Analyzing
+        </p>
+        <h3 className="text-2xl font-display font-bold text-white">
+          &ldquo;{query}&rdquo;
+        </h3>
+      </div>
+
+      {/* ─── Step Progress ────────────────────────────────────────────────── */}
+      <div className="w-full max-w-md space-y-3">
         <AnimatePresence mode="wait">
           <motion.div
             key={stepIndex}
+            className="glass-card rounded-xl px-5 py-4 border-primary/20"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="absolute flex items-center gap-2"
           >
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            {LOADING_STEPS[stepIndex].text}
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{SCAN_STEPS[stepIndex].icon}</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">
+                  {SCAN_STEPS[stepIndex].label}{dots}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {SCAN_STEPS[stepIndex].detail}
+                </p>
+              </div>
+              {/* Spinning indicator */}
+              <motion.div
+                className="w-4 h-4 rounded-full border-2 border-t-primary border-r-primary/30 border-b-transparent border-l-transparent shrink-0"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+              />
+            </div>
           </motion.div>
         </AnimatePresence>
+
+        {/* Step progress dots */}
+        <div className="flex items-center justify-center gap-2">
+          {SCAN_STEPS.map((_, i) => (
+            <motion.div
+              key={i}
+              className="rounded-full"
+              animate={{
+                width: i === stepIndex ? 20 : 6,
+                backgroundColor: i <= stepIndex ? "hsl(var(--primary))" : "rgba(255,255,255,0.15)"
+              }}
+              style={{ height: 6 }}
+              transition={{ duration: 0.4 }}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="mt-8 flex items-center gap-6 text-xs font-mono text-muted-foreground/50 border border-white/5 rounded-lg px-4 py-2 bg-black/20">
-        <span className="flex items-center gap-2">
-          <Activity className="w-3 h-3 text-accent" />
-          LIVE FETCH VISIBLE
-        </span>
-        <span className="w-px h-3 bg-white/10" />
-        <span className="w-16 text-right">{timeElapsed.toFixed(1)}s</span>
-      </div>
+      {/* ─── Status line ─────────────────────────────────────────────────── */}
+      <p className="text-xs font-mono text-muted-foreground/50">
+        AI intelligence engine active — this usually takes 5–15 seconds
+      </p>
     </div>
   );
 }
