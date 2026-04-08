@@ -4,14 +4,15 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import Parser from "rss-parser";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
-// ─── OpenAI Client ────────────────────────────────────────────────────────────
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// ─── Groq Client ─────────────────────────────────────────────────────────────
+const groq = process.env.GROQ_API_KEY
+  ? new Groq({ apiKey: process.env.GROQ_API_KEY })
   : null;
+const GROQ_MODEL = "llama-3.1-70b-versatile";
 
-// ─── Local Summary Fallback (used when OpenAI is not configured) ─────────────
+// ─── Local Summary Fallback (used when Groq is not configured) ───────────────
 function generateLocalSummary(text: string): string {
   if (!text) return "No summary available.";
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
@@ -19,13 +20,13 @@ function generateLocalSummary(text: string): string {
 }
 
 async function generateAISummaries(abstracts: string[]): Promise<string[]> {
-  if (openai) {
+  if (groq) {
     try {
       const results = await Promise.all(abstracts.map(async (text) => {
         try {
-          const completion = await openai.chat.completions.create({
+          const completion = await groq.chat.completions.create({
             messages: [{ role: "system", content: "Summarize this technical abstract in 2-3 short, concise sentences." }, { role: "user", content: text }],
-            model: "gpt-4o-mini",
+            model: GROQ_MODEL,
           });
           return completion.choices[0]?.message?.content || generateLocalSummary(text);
         } catch (e) {
@@ -39,11 +40,11 @@ async function generateAISummaries(abstracts: string[]): Promise<string[]> {
 }
 
 async function generateInsights(query: string, keywords: string[], arxivCount: number, githubCount: number): Promise<string[]> {
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [{ role: "system", content: "Generate 2 simple tech trend insights (1 sentence each) based on the query, keywords, and repo counts. Output just the insights separated by a newline." }, { role: "user", content: `Query: ${query}, Keywords: ${keywords.join(", ")}, Papers: ${arxivCount}, Repos: ${githubCount}` }],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
       });
       const lines = response.choices[0]?.message?.content?.split('\n').filter(l => l.trim().length > 0) || [];
       return lines.map(l => l.replace(/^-[*-]*\s+|- \s+/, '').trim()).slice(0, 2);
@@ -64,14 +65,14 @@ async function generateInsights(query: string, keywords: string[], arxivCount: n
 }
 
 async function generateOpportunities(query: string, keywords: string[]): Promise<any[]> {
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [
           { role: "system", content: `Generate exactly 2 startup ideas based on the research. Return JSON strictly in this format: { "opportunities": [{ "idea": "...", "problem": "...", "solution": "..." }] }` },
           { role: "user", content: `Query: ${query}, Keywords: ${keywords.join(", ")}` }
         ],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
         response_format: { type: "json_object" }
       });
       const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
@@ -98,11 +99,11 @@ async function generateOpportunities(query: string, keywords: string[]): Promise
 }
 
 async function generateFutureOutlook(query: string, keywords: string[], arxivCount: number, githubCount: number): Promise<string> {
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [{ role: "system", content: "You are a tech forecaster. Predict the 3-5 year future growth of this technology in exactly one compelling sentence based on research and open-source momentum." }, { role: "user", content: `Topic: ${query}, Keywords: ${keywords.join(", ")}, Papers: ${arxivCount}, Repos: ${githubCount}` }],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
       });
       return response.choices[0]?.message?.content || "";
     } catch (e) { }
@@ -115,11 +116,11 @@ async function generateFutureOutlook(query: string, keywords: string[], arxivCou
 }
 
 async function generateSkillRoadmap(query: string, keywords: string[]): Promise<Array<{ stage: string, skills: string[] }>> {
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [{ role: "system", content: `Generate a 3-stage learning roadmap for engineers pursuing this technology. strict JSON format: { "roadmap": [{ "stage": "...", "skills": ["...", "..."] }] }` }, { role: "user", content: `Topic: ${query}, Context: ${keywords.join(", ")}` }],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
         response_format: { type: "json_object" }
       });
       const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
@@ -136,11 +137,11 @@ async function generateSkillRoadmap(query: string, keywords: string[]): Promise<
 }
 
 async function generatePrototype(query: string, keywords: string[], marketPotential: number): Promise<any> {
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [{ role: "system", content: 'You are an AI product architect. Create a product prototype based on the research topic. Return JSON ONLY matching: { "productConcept": "string", "targetUsers": "string", "techStack": ["string"], "mvpSteps": ["string"], "architectureDiagram": ["string"] }' }, { role: "user", content: `Topic: ${query}, Keywords: ${keywords.join(", ")}` }],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
         response_format: { type: "json_object" }
       });
       const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
@@ -180,11 +181,11 @@ async function fetchIndustrySignals(query: string, keywords: string[]): Promise<
     console.error("News fetch error", e);
   }
 
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [{ role: "system", content: "You are a tech journalist. Generate 2 plausible latest industry news headlines regarding the topic. Output only the sentences separated by newline." }, { role: "user", content: `Topic: ${query}, Keywords: ${keywords.join(", ")}` }],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
       });
       const lines = response.choices[0]?.message?.content?.split('\n').filter(l => l.trim().length > 0) || [];
       return lines.map(l => l.replace(/^-[*-]*\s+|- \s+/, '').trim()).slice(0, 2);
@@ -202,14 +203,14 @@ function computeInvestmentSignal(papers: number, repos: number, newsCount: numbe
 }
 
 async function generateStrategicIntelligence(query: string, keywords: string[], arxivCount: number, githubCount: number, newsCount: number): Promise<any> {
-  if (openai) {
+  if (groq) {
     try {
-      const response = await openai.chat.completions.create({
+      const response = await groq.chat.completions.create({
         messages: [
           { role: "system", content: "You are a tech strategist. Analyze the given technology. Return JSON strictly formatted as: { \"riskProfile\": { \"maturity\": \"Low|Medium|High\", \"uncertainty\": \"Low|Medium|High\", \"marketRisk\": \"Low|Medium|High\" }, \"adoptionTimeline\": \"string\", \"recommendations\": { \"engineers\": \"string\", \"startups\": \"string\", \"investors\": \"string\" } }" },
           { role: "user", content: `Query: ${query}, Keywords: ${keywords.join(", ")}, Papers: ${arxivCount}, Repos: ${githubCount}, News: ${newsCount}` }
         ],
-        model: "gpt-4o-mini",
+        model: GROQ_MODEL,
         response_format: { type: "json_object" }
       });
       const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
@@ -332,7 +333,7 @@ const INSTITUTION_COUNTRY_MAP: Record<string, string> = {
   "Google": "United States of America",
   "Microsoft": "United States of America",
   "Meta": "United States of America",
-  "OpenAI": "United States of America",
+  "Groq": "United States of America",
   "Tsinghua": "China",
   "Peking": "China",
   "Alibaba": "China",
@@ -609,7 +610,7 @@ export async function registerRoutes(
       const competitiveEcosystem = {
         topCompanies: companiesMock,
         topStartups: startupMock,
-        topOrgs: topOrgs.length > 0 ? topOrgs.slice(0, 3) : ["OpenAI", "Linux Foundation"]
+        topOrgs: topOrgs.length > 0 ? topOrgs.slice(0, 3) : ["Groq", "Linux Foundation"]
       };
 
       const globalActivity = Object.keys(globalActivityMap).map(country => ({
@@ -681,11 +682,11 @@ export async function registerRoutes(
   app.get(api.analyze.brief.get.path, async (req, res) => {
     try {
       const { q } = api.analyze.brief.get.input.parse(req.query);
-      if (openai) {
+      if (groq) {
         try {
-          const response = await openai.chat.completions.create({
+          const response = await groq.chat.completions.create({
             messages: [{ role: "system", content: "You are a senior tech analyst. Generate a structured 1-page markdown brief including Topic Overview, Key Research, Open Source Ecosystem, Tech Trends, and Startup Opportunities." }, { role: "user", content: `Topic: ${q}` }],
-            model: "gpt-4o-mini",
+            model: GROQ_MODEL,
           });
           return res.json({ brief: response.choices[0]?.message?.content || "Generation failed." });
         } catch (e) { }

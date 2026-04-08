@@ -11,7 +11,7 @@
 | Feature | Description |
 |---|---|
 | **Research Aggregation** | Pulls latest papers from arXiv API + top repos from GitHub |
-| **AI Analysis** | GPT-4o-mini summaries, insights, startup ideas, risk profiles |
+| **AI Analysis** | Groq-powered summaries, insights, startup ideas, risk profiles |
 | **Trend Scoring** | 0–100 momentum score + investment signal (LOW/MEDIUM/HIGH) |
 | **Global Research Map** | World map showing research activity by country |
 | **Semiconductor Mode** | Specialized VLSI/chip/RISC-V intelligence pipeline |
@@ -64,6 +64,14 @@ Open [http://localhost:5000](http://localhost:5000) 🎉
 
 ---
 
+## 🖼️ Frontend Screenshots
+
+| Home | Results |
+|---|---|
+| ![Research Radar AI home screen](docs/screenshots/home.png) | ![Research Radar AI results screen](docs/screenshots/results.png) |
+
+---
+
 ## 🔑 Environment Variables
 
 | Variable | Required | Description |
@@ -71,7 +79,7 @@ Open [http://localhost:5000](http://localhost:5000) 🎉
 | `DATABASE_URL` | ✅ | SQLite file path. Use `file:sqlite.db` |
 | `PORT` | Optional | Server port (default: 5000) |
 | `NODE_ENV` | Optional | `development` or `production` |
-| `OPENAI_API_KEY` | Recommended | Powers AI summaries & insights. Without it, rule-based fallbacks are used |
+| `GROQ_API_KEY` | Recommended | Powers AI summaries & insights. Without it, rule-based fallbacks are used |
 | `GITHUB_TOKEN` | Recommended | Increases GitHub API rate limit from 60 → 5000 req/hour |
 
 ---

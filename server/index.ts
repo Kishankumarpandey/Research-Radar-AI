@@ -23,10 +23,10 @@ export function log(message: string, source = "server", level: LogLevel = "info"
 
 // ─── Startup Environment Validation ─────────────────────────────────────────
 function validateEnvironment() {
-  if (!process.env.OPENAI_API_KEY) {
-    log("OPENAI_API_KEY is not set — AI features will use rule-based fallbacks", "startup", "warn");
+  if (!process.env.GROQ_API_KEY) {
+    log("GROQ_API_KEY is not set — AI features will use rule-based fallbacks", "startup", "warn");
   } else {
-    log("OPENAI_API_KEY detected — AI-powered analysis enabled", "startup", "info");
+    log("GROQ_API_KEY detected — AI-powered analysis enabled", "startup", "info");
   }
 
   if (!process.env.GITHUB_TOKEN) {
